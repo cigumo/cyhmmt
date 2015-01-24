@@ -16,6 +16,9 @@ function love.load(arg)
     -- command line arguments 
     local F_MODE = nil
     local REPL_PORT = nil
+    local SERVER_BIND_HOST = '0.0.0.0'
+    local SERVER_HOST = '127.0.0.1' 
+    local SERVER_PORT = 10000
     if table.contains(arg, '-server') then 
         F_MODE = 'server'
         REPL_PORT = 9000
@@ -26,7 +29,7 @@ function love.load(arg)
         F_MODE = 'engineer'
         REPL_PORT = 9002
     else
-        print ('Please specify the mode with one of the following parameters:\n -server or -pilot or -engineer')
+        print('USAGE: love cyhmmt (-server | -pilot | -engineer)')        
         love.event.quit()
         return
     end
@@ -43,18 +46,24 @@ function love.load(arg)
     end
 
     local screen_w,screen_h = 1024,768
-    local screen_scale = 1
 
     local engine = nil
+    local success = false
     if F_MODE == 'server' then 
+        screen_w,screen_h = 300,100
         engine = require 'server'
+        success = engine:init(screen_w, screen_h, SERVER_BIND_HOST, SERVER_PORT)
     elseif F_MODE == 'pilot' then 
         engine = require 'pilot'
+        success = engine:init(screen_w, screen_h, SERVER_HOST, SERVER_PORT)
     elseif F_MODE == 'engineer' then 
         engine = require 'engineer'
+        success = engine:init(screen_w, screen_h, SERVER_HOST, SERVER_PORT)
     end
-    if not engine:init(screen_w,screen_h) then 
+
+    if not success then 
         log.error('Error starting engine %s', F_MODE)
+        love.event.quit()
     end
 
     love.update        = function(dt) 
@@ -64,10 +73,10 @@ function love.load(arg)
                              engine:update(dt)
                          end
     love.draw          = function() engine:draw() end
-    love.keypressed    = function(key, isrepeat) engine:keypressed(key, isrepeat) end
-    love.keyreleased   = function(key, isrepeat) engine:keyreleased(key) end
-    love.mousepressed  = function(x,y,button) engine:mousepressed(x,y,button) end
-    love.mousereleased = function(x,y,button) engine:mousereleased(x,y,button) end
+    --love.keypressed    = function(key, isrepeat) engine:keypressed(key, isrepeat) end
+    --love.keyreleased   = function(key, isrepeat) engine:keyreleased(key) end
+    --love.mousepressed  = function(x,y,button) engine:mousepressed(x,y,button) end
+    --love.mousereleased = function(x,y,button) engine:mousereleased(x,y,button) end
     
     love.window.setMode(screen_w, screen_h, {centered=false})
 end
